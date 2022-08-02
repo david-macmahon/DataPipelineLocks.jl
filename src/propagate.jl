@@ -13,8 +13,8 @@ function propagate(f, dplsrc, dpldst, args...; kwargs...)::Bool
         waitfilled(dplsrc)
         waitfree(dpldst)
         f(args...; kwargs...)
-        setfree!(dplsrc)
         setfilled!(dpldst)
+        setfree!(dplsrc)
         return true
     catch ex
         # Rethrow any non-DataPipelineTerminatedException exception
