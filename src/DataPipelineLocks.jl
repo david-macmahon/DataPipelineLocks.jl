@@ -1,9 +1,11 @@
 module DataPipelineLocks
 
 export DataPipelineLock
+export DataPipelineTerminatedException
 export isfree, isfilled
 export setfree!, setfilled!
 export waitfree, waitfilled
+export isterminated, terminate!
 export produce, propagate, consume
 
 include("lock.jl")

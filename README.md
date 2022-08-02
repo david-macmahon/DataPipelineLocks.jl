@@ -22,7 +22,25 @@ i.e. both consumer and producer.
 A data pipeline will generally use one `DataPipelineLock` between each
 consecutive pair of tasks, but more complex arrangements are possible.
 
-# Example
+# Data Pipeline Termination
+
+To facilitate the termination of the asynchronous tasks of a data pipeline,
+`DataPipelineLock` instances can be *terminated* using the `terminate!`
+function.  When a `DataPipelineLock` instance in terminated, any task waiting on
+that instance will throw a `DataPipelineTerminatedException` exception and any
+future operation of the terminated `DataPipelineLock` instance will also throw
+the same type of exception.  Tasks may catch this exception to perform any
+cleanup that may be required before terminating.  Simple tasks without cleanup
+requirements may simply opt to let the exception end the task.  To terminate an
+entire pipeline, all `DataPipelineLock` instances of the data pipeline should be
+terminated and `wait` should be called on all tasks to ensure that they finish.
+Calling `wait` on tasks that do not catch the `DataPipelineTerminatedException`
+will itself throw a `TaskFailedException` which must be caught so as not to
+prematurely exit the main task.  If desired, the termination status of a
+`DataPipelineLock` instance may be obtained by passing it to the `isterminated`
+function.
+
+# Examples
 
 Here is a simplified data pipeline that demonstrates the usage of
 `DataPipelineLocks`.  This example is a modified version of one of the

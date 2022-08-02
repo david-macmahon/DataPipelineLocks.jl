@@ -17,12 +17,16 @@ using Test
     @test isfree(dpl2)
     @test !isfilled(dpl2)
 
-    propagator = @async propagate($dpl1, $dpl2, $db1, $db2) do din, dout
-        dout[] = 10 * din[]
+    propagator = @async while true
+        propagate($dpl1, $dpl2, $db1, $db2) do din, dout
+            dout[] = 10 * din[]
+        end
     end
 
-    consumer = @async consume($dpl2, $db2, $dbout) do din, dout
-        dout[] = din[] + 3
+    consumer = @async while true
+        consume($dpl2, $db2, $dbout) do din, dout
+            dout[] = din[] + 3
+        end
     end
 
     # Give async tasks a chance to start
@@ -36,18 +40,32 @@ using Test
     @test !istaskdone(consumer)
     @test !istaskfailed(consumer)
 
-    d = rand(1:10)
-    produce(dataref->dataref[]=d, dpl1, db1)
+    for i = 1:3
+        d = rand(1:10)
+        produce(dataref->dataref[]=d, dpl1, db1)
 
-    waitfree(dpl1)
-    @test istaskstarted(propagator)
-    @test istaskdone(propagator)
+        waitfree(dpl1)
+        waitfree(dpl2)
+        @test dbout[] == 10 * d + 3
+    end
+
+    @test !istaskdone(propagator)
     @test !istaskfailed(propagator)
 
-    waitfree(dpl2)
-    @test istaskstarted(consumer)
-    @test istaskdone(consumer)
+    @test !istaskdone(consumer)
     @test !istaskfailed(consumer)
 
-    @test dbout[] == 10 * d + 3
+    terminate!(dpl1)
+    terminate!(dpl2)
+
+    for t in (propagator, consumer)
+        try
+            wait(propagator)
+            # Should never get here
+            @test false
+        catch ex
+            @test ex isa TaskFailedException
+            @test ex.task.result isa DataPipelineTerminatedException
+        end
+    end
 end
