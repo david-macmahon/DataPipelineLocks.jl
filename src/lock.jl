@@ -55,6 +55,9 @@ Operations on `DataPipelineLock` instances in the terminated state will also
 throw the same exception type.
 """
 function terminate!(dpl::DataPipelineLock)
+    # Terminating a terminated DataPipelineLock is a no-op
+    dpl.terminated && return dpl
+
     lock(dpl)
     try
         dpl.terminated = true
