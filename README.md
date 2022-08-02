@@ -17,7 +17,9 @@ each task's output data buffer is another task's input data buffer, except for
 the first and last tasks which have only an output and an input buffer,
 respectively.  Essentially, the first task is a *producer* or data and the last
 task is the *consumer* of data.  All other intervening tasks are *propagators*,
-i.e. both consumer and producer.
+i.e. both consumer and producer.  The functions `produce`, `propagate`, and
+`consume` encapsulate the relevant machinations and utilize caller-supplied
+functions to perform the desired data transfer/processing.
 
 A data pipeline will generally use one `DataPipelineLock` between each
 consecutive pair of tasks, but more complex arrangements are possible.
@@ -40,6 +42,19 @@ prematurely exit the main task.  If desired, the termination status of a
 `DataPipelineLock` instance may be obtained by passing it to the `isterminated`
 function.
 
+The `produce`, `propagate`, and `consume` functions normally return `true`, but
+upon catching a `DataPipelineTerminatedException`, they will return `false`.
+Tasks that use these functions should perform any cleanup required and exit when
+`false` is returned.
+
+Furthermore, `propagate` will also call `terminate!` on the downstream
+`DataPipelineLock` object to propagate the termination status down the pipeline.
+Propagation tasks that do not use `propagate` should likewise propagate any
+termination status to its downstream `DataPipelineLock` object.  This convention
+allows for the data pipeline to be terminated by calling `terminate!` on the
+first `DataPipelineLock` instance of the data pipeline and then calling `wait`
+on the last task of the data pipeline.
+
 # Examples
 
 Here is a simplified data pipeline that demonstrates the usage of
@@ -52,41 +67,41 @@ consumer task is started via `@async`.
 using DataPipelineLocks
 
 databuf = Ref(0)
-pl = DataPipelineLock()
+dpl = DataPipelineLock()
 
-consumer = @async consume($pl, $databuf) do d
+consumer = @async consume($dpl, $databuf) do d
     result = 10 * d[] + 3
     println("pipeline result is $result")
 end
 
-producer = @async produce($pl, $databuf) do d
+producer = @async produce($dpl, $databuf) do d
     d[] = rand(1:9)
 end
 
-wait(producer)
 wait(consumer)
 ```
 
 Normally the tasks in a data pipeline will loop many times to process multiple
 blocks of data rather than perform a one-shot operation like the above example.
 Here is a similar version that processes three "blocks" of data (where a "block"
-here is the single `Int` stored in `databuf`):
+here is the single `Int` stored in `databuf`).  Notice that the "consumer" task
+ends when `consume` returns `false`, which happens when the lock is terminated.
 
 ```julia
 using DataPipelineLocks
 
 databuf = Ref(0)
-pl = DataPipelineLock()
+dpl = DataPipelineLock()
 
 consumer = @async for i=1:3
-    consume($pl, $databuf) do d
+    consume($dpl, $databuf) do d
         result = 10 * d[] + 3
         println("pipeline result $i is $result")
     end
 end
 
 producer = @async for i=1:3
-    produce($pl, $databuf) do d
+    produce($dpl, $databuf) do d
         d[] = rand(1:9)
     end
 end

@@ -1,11 +1,19 @@
 """
-    consume(f, pl, args...; kwargs...)
-Waits for `pl` to be "filled", calls `f(args...; kwargs...)` which should
-"consume" whatever data is in the data buffer, and then sets `pl` to the "free"
-state.  Typically, `args` will contain the data buffer to be consumed.
+    consume(f, dpl, args...; kwargs...)::Bool
+Wait for `dpl` to be "filled", call `f(args...; kwargs...)` which should
+"consume" whatever data is in the "data buffer", and then set `dpl` to the
+"free" state.  Typically, `args` will contain the "data buffer" to be consumed.
+Returns `false` if `dpl` is terminated, otherwise returns `true`.
 """
-function consume(f, pl, args...; kwargs...)
-    waitfilled(pl)
-    f(args...; kwargs...)
-    setfree!(pl)
+function consume(f, dpl, args...; kwargs...)::Bool
+    try
+        waitfilled(dpl)
+        f(args...; kwargs...)
+        setfree!(dpl)
+        return true
+    catch ex
+        # Rethrow any non-DataPipelineTerminatedException exception
+        ex isa DataPipelineTerminatedException || rethrow()
+        return false
+    end
 end
