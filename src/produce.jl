@@ -13,8 +13,8 @@ function produce(f, dpl, args...; kwargs...)::Bool
         setfilled!(dpl)
         return true
     catch ex
-        # Rethrow a non-DataPipelineTerminatedException exception
-        ex isa DataPipelineTerminatedException || rethrow()
+        # Rethrow a non-DataPipelineTerminated exception
+        ex isa DataPipelineTerminated || rethrow()
         return false
     end
 end

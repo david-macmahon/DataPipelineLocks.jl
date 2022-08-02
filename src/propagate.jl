@@ -17,8 +17,8 @@ function propagate(f, dplsrc, dpldst, args...; kwargs...)::Bool
         setfree!(dplsrc)
         return true
     catch ex
-        # Rethrow any non-DataPipelineTerminatedException exception
-        ex isa DataPipelineTerminatedException || rethrow()
+        # Rethrow any non-DataPipelineTerminated exception
+        ex isa DataPipelineTerminated || rethrow()
         # Propagate termination downstream
         terminate!(dpldst)
         return false

@@ -29,31 +29,31 @@ consecutive pair of tasks, but more complex arrangements are possible.
 To facilitate the termination of the asynchronous tasks of a data pipeline,
 `DataPipelineLock` instances can be *terminated* using the `terminate!`
 function.  When a `DataPipelineLock` instance in terminated, any task waiting on
-that instance will throw a `DataPipelineTerminatedException` exception and any
-future operation of the terminated `DataPipelineLock` instance will also throw
-the same type of exception.  Tasks may catch this exception to perform any
-cleanup that may be required before terminating.  Simple tasks without cleanup
-requirements may simply opt to let the exception end the task.  To terminate an
-entire pipeline, all `DataPipelineLock` instances of the data pipeline should be
+that instance will throw a `DataPipelineTerminated` exception and any future
+operation of the terminated `DataPipelineLock` instance will also throw the same
+type of exception.  Tasks may catch this exception to perform any cleanup that
+may be required before terminating.  Simple tasks without cleanup requirements
+may simply opt to let the exception end the task.  To terminate an entire
+pipeline, all `DataPipelineLock` instances of the data pipeline should be
 terminated and `wait` should be called on all tasks to ensure that they finish.
-Calling `wait` on tasks that do not catch the `DataPipelineTerminatedException`
-will itself throw a `TaskFailedException` which must be caught so as not to
+Calling `wait` on tasks that do not catch the `DataPipelineTerminated` will
+itself throw a `TaskFailedException` which must be caught so as not to
 prematurely exit the main task.  If desired, the termination status of a
 `DataPipelineLock` instance may be obtained by passing it to the `isterminated`
 function.
 
 The `produce`, `propagate`, and `consume` functions normally return `true`, but
-upon catching a `DataPipelineTerminatedException`, they will return `false`.
+upon catching a `DataPipelineTerminated` exception, they will return `false`.
 Tasks that use these functions should perform any cleanup required and exit when
 `false` is returned.
 
 Furthermore, `propagate` will also call `terminate!` on the downstream
 `DataPipelineLock` object to propagate the termination status down the pipeline.
-Propagation tasks that do not use `propagate` should likewise propagate any
-termination status to its downstream `DataPipelineLock` object.  This convention
-allows for the data pipeline to be terminated by calling `terminate!` on the
-first `DataPipelineLock` instance of the data pipeline and then calling `wait`
-on the last task of the data pipeline.
+Any propagation tasks that does not use `propagate` should likewise propagate
+any termination status to its downstream `DataPipelineLock` object.  This
+convention allows for the data pipeline to be terminated by calling `terminate!`
+on the first `DataPipelineLock` instance of the data pipeline and then calling
+`wait` on the last task of the data pipeline.
 
 # Examples
 

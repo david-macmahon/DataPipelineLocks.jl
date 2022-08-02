@@ -1,9 +1,9 @@
 """
-A `DataPipelineTerminatedException` is thrown inside `wait` if the
-`DataPipelineLock` is terminated while waiting.  The exception is also thrown if
-operation are attempted on a terminated `DataPipelineLock`.
+A `DataPipelineTerminated` is thrown inside `wait` if the `DataPipelineLock` is
+terminated while waiting.  The exception is also thrown if operation are
+attempted on a terminated `DataPipelineLock`.
 """
-struct DataPipelineTerminatedException <: Exception end
+struct DataPipelineTerminated <: Exception end
 
 """
 A `DataPipelineLock`` is used to coordinate access to a data buffer between a
@@ -23,8 +23,8 @@ The higher level functions `produce`, `propagate`, and `consume` are usually
 used instead of the lower level synchronization and state related functions,
 except in cases where more flexibility is needed.
 
-`DataPipelineLock` does not specify the nature of the "data buffer".  Nor does it
-even know what the "data buffer" is or where it lives.
+`DataPipelineLock` does not specify the nature of the "data buffer".  Nor does
+it even know what the "data buffer" is or where it lives.
 """
 mutable struct DataPipelineLock <: Base.AbstractLock
     lock::Threads.Condition
@@ -41,16 +41,16 @@ isterminated(dpl) = dpl.terminated
 
 """
     check_terminated(dpl)
-Throws a `DataPipelineTerminatedException` if `dpl` has been terminated.
+Throws a `DataPipelineTerminated` if `dpl` has been terminated.
 """
 function check_terminated(dpl::DataPipelineLock)
-    isterminated(dpl) && throw(DataPipelineTerminatedException())
+    isterminated(dpl) && throw(DataPipelineTerminated())
 end
 
 """
     terminate!(dpl)
 Terminates the given `DataPipelineLock`.  This wakes all waiters with a
-`DataPipelineTerminatedException` and puts `dpl` in the *terminated* state.
+`DataPipelineTerminated` exception and puts `dpl` in the *terminated* state.
 Operations on `DataPipelineLock` instances in the terminated state will also
 throw the same exception type.
 """
@@ -61,7 +61,7 @@ function terminate!(dpl::DataPipelineLock)
     lock(dpl)
     try
         dpl.terminated = true
-        Base.notify_error(dpl.lock, DataPipelineTerminatedException())
+        Base.notify_error(dpl.lock, DataPipelineTerminated())
     finally
         # Cannot call `unlock(dpl)` because `dpl` is now terminated!
         unlock(dpl.lock)

@@ -12,8 +12,8 @@ function consume(f, dpl, args...; kwargs...)::Bool
         setfree!(dpl)
         return true
     catch ex
-        # Rethrow any non-DataPipelineTerminatedException exception
-        ex isa DataPipelineTerminatedException || rethrow()
+        # Rethrow any non-DataPipelineTerminated exception
+        ex isa DataPipelineTerminated || rethrow()
         return false
     end
 end

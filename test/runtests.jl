@@ -21,13 +21,13 @@ using Test
         dout[] = 10 * din[]
     end
     end
-    #errormonitor(propagator)
+    errormonitor(propagator)
 
     consumer = @async while consume($dpl2, $db2, $dbout) do din, dout
         dout[] = din[] + 3
     end
     end
-    #errormonitor(consumer)
+    errormonitor(consumer)
 
     # Give async tasks a chance to start
     yield()
