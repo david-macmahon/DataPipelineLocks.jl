@@ -57,6 +57,8 @@ on the first `DataPipelineLock` instance of the data pipeline and then calling
 
 # Examples
 
+## Simple "one shot" example
+
 Here is a simplified data pipeline that demonstrates the usage of
 `DataPipelineLocks`.  This example is a modified version of one of the
 `DataPipelineLocks` tests.  The "data buffer" in this example is simply a `Ref`
@@ -81,31 +83,95 @@ end
 wait(consumer)
 ```
 
+## More realistic example
+
 Normally the tasks in a data pipeline will loop many times to process multiple
 blocks of data rather than perform a one-shot operation like the above example.
-Here is a similar version that processes three "blocks" of data (where a "block"
-here is the single `Int` stored in `databuf`).  Notice that the "consumer" task
-ends when `consume` returns `false`, which happens when the lock is terminated.
+The example below presents a somewhat more realistic data pipeline with three
+tasks: a "producer" task, a "propagator" task, and a "consumer" task.  The data
+buffers `bufin` and `bufout` are `Vector{Int}` and each gets a corresponding
+`DataPipelineLock` instance, `dplin` and `dplout` respectively.  The "producer"
+task calls `produce` three times, each time populating `bufin` with random
+integers in the range `1:9`.  The "propagator" task modifies and propagates the
+data from `bufin` to `bufout`.  The "consumer" task consumes the data from
+`bufout` by printing it.
+
+The lifecycle of this pipeline, managed by the main task, is driven by the fact
+that the producer task calls `produce` three times in a `for` loop and then
+ends.  After starting the pipeline, the main task performs these steps to make
+sure the pipeline completes cleanly (i.e. with all data processed and all tasks
+completed):
+
+1. The main task waits for the producer thread to finish.
+
+2. The  main task waits for all locks to be free.  After the producer task has
+   finished the other tasks are still running and potentially still processing
+   data.  To ensure that all the data get processed through the pipeline, the
+   main task waits for all the `DataPipelineLock` instances to be free.
+
+3. The main task uses `terminate!` to terminate the `DataPipelineLock` of the
+   first data buffer, `dplin`.  After all the data have passed through the data
+   pipeline, the other (i.e.  non-producer) task are still running, waiting for
+   more input that will never come.  Terminating the lock of the first data
+   buffer starts a cascade effect that results in all tasks ending.
+
+   - The `propagate` function used by the propagator task has been waiting for
+     `dplin` to be marked "filled" indicating more data, but when `dplin` is
+     terminated the `propagate` function catches a `DataPipelineTerminated`
+     exception, terminates its output `DataPipelineLock` instance (i.e.
+     `dplout`) and then returns `false` which causes the propagator task to end.
+
+   - Once `dplout` is terminated a similar process happens for for consumer
+     thread.
+
+   Propagating pipeline tasks that opt not to use `propagate` should ensure that
+   they handle `DataPipelineTerminated` exceptions in a similar manner to
+   maintain the cascading pattern of `DataPipelineLock` terminations.
+
+4. The main task waits for the final task of the data pipeline, in this case the
+   consumer task, to complete.  After terminating the `DataPipelineLock` of the
+   first data buffer, the main task tracks the cascade of lock terminations and
+   task completions by waiting for the remaining tasks to complete.
 
 ```julia
 using DataPipelineLocks
+import Random: rand!
 
-databuf = Ref(0)
-dpl = DataPipelineLock()
+bufin  = Vector{Int}(undef, 4)
+bufout = Vector{Int}(undef, 4)
 
-consumer = @async for i=1:3
-    consume($dpl, $databuf) do d
-        result = 10 * d[] + 3
-        println("pipeline result $i is $result")
+dplin  = DataPipelineLock()
+dplout  = DataPipelineLock()
+
+producer = @async begin
+    for i=1:3
+        produce($dplin, $bufin) do d
+            rand!(d, 1:9)
+        end
     end
 end
 
-producer = @async for i=1:3
-    produce($dpl, $databuf) do d
-        d[] = rand(1:9)
-    end
+propagator = @async while propagate($dplin, $dplout, $bufin, $bufout) do din, dout
+    dout .= 10 .* din .+ 3
+end
 end
 
+consumer = @async while consume($dplout, $bufout) do d
+    println("pipeline result is $d")
+end
+end
+
+# 1. Wait for producer to finish
 wait(producer)
+
+# 2. Wait for locks to be free
+waitfree(dplin)
+waitfree(dplout)
+
+# 3. Terminate first lock
+terminate!(dplin)
+
+# 4. Wait for remaining tasks to finish
+wait(propagator)
 wait(consumer)
 ```
