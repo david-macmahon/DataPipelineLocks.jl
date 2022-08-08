@@ -5,6 +5,7 @@ export DataPipelineTerminated
 export isfree, isfilled
 export setfree!, setfilled!
 export waitfree, waitfilled
+export waitfree!, waitfilled!
 export isterminated, terminate!
 export produce, propagate, consume
 

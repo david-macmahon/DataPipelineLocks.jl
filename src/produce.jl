@@ -8,9 +8,9 @@ otherwise returns `true`.
 """
 function produce(f, dpl, args...; kwargs...)::Bool
     try
-        @debug "produce >waitfree" dpl
-        waitfree(dpl)
-        @debug "produce <waitfree" dpl
+        @debug "produce >waitfree!" dpl
+        waitfree!(dpl)
+        @debug "produce <waitfree!" dpl
 
         f(args...; kwargs...)
 

@@ -10,13 +10,13 @@ is terminated, otherwise returns `true`.
 """
 function propagate(f, dplsrc, dpldst, args...; kwargs...)::Bool
     try
-        @debug "propagate >waitfilled" dplsrc
-        waitfilled(dplsrc)
-        @debug "propagate <waitfilled" dplsrc
+        @debug "propagate >waitfilled!" dplsrc
+        waitfilled!(dplsrc)
+        @debug "propagate <waitfilled!" dplsrc
 
-        @debug "propagate >waitfree" dpldst
-        waitfree(dpldst)
-        @debug "propagate <waitfree" dpldst
+        @debug "propagate >waitfree!" dpldst
+        waitfree!(dpldst)
+        @debug "propagate <waitfree!" dpldst
 
         f(args...; kwargs...)
 

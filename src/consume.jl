@@ -7,9 +7,9 @@ Returns `false` if `dpl` is terminated, otherwise returns `true`.
 """
 function consume(f, dpl, args...; kwargs...)::Bool
     try
-        @debug "consume >waitfilled" dpl
-        waitfilled(dpl)
-        @debug "consume <waitfilled" dpl
+        @debug "consume >waitfilled!" dpl
+        waitfilled!(dpl)
+        @debug "consume <waitfilled!" dpl
 
         f(args...; kwargs...)
 
