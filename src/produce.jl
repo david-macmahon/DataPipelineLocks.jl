@@ -8,13 +8,23 @@ otherwise returns `true`.
 """
 function produce(f, dpl, args...; kwargs...)::Bool
     try
+        @debug "produce >waitfree" dpl
         waitfree(dpl)
+        @debug "produce <waitfree" dpl
+
         f(args...; kwargs...)
+
+        @debug "produce >setfilled!" dpl
         setfilled!(dpl)
+        @debug "produce <setfilled!" dpl
+
+        @debug "produce return true"
         return true
     catch ex
         # Rethrow a non-DataPipelineTerminated exception
         ex isa DataPipelineTerminated || rethrow()
+
+        @debug "produce return false"
         return false
     end
 end
