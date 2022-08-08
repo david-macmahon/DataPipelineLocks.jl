@@ -1,7 +1,7 @@
 name = "DataPipelineLocks"
 uuid = "20753f05-dcde-462e-871d-030ce9b3c02b"
 authors = ["David MacMahon <davidm@astro.berkeley.edu> and contributors"]
-version = "0.1.0"
+version = "0.2.0"
 
 [compat]
 julia = "1.6"
