@@ -133,7 +133,7 @@ end
 
 """
     isstate(dpl::DataPipelineLock, state::DataPipelineLockState) -> Bool
-Retrun true if `dpl` is in the `state` state.  Throw a
+Return true if `dpl` is in the `state` state.  Throw a
 `DataPipelineLockTerminated` exception if the lock has been terminated unless
 `state` is `TERMINATED`.
 """
@@ -145,7 +145,7 @@ end
 
 """
     isfree(dpl::DataPipelineLock) -> Bool
-Retrun true if `dpl` is in the `free` state.  Throw a
+Return true if `dpl` is in the `free` state.  Throw a
 `DataPipelineLockTerminated` exception if the lock has been terminated unless
 `state` is `TERMINATED`.
 """
@@ -153,21 +153,21 @@ isfree(dpl::DataPipelineLock) = isstate(dpl, FREE)
 
 """
     isfilling(dpl::DataPipelineLock) -> Bool
-Retruns true if `dpl` is in the `FILLING` state.  Throw a
+Return true if `dpl` is in the `FILLING` state.  Throw a
 `DataPipelineLockTerminated` exception if the lock has been terminated.
 """
 isfilling(dpl::DataPipelineLock) = isstate(dpl, FILLING)
 
 """
     isfilled(dpl::DataPipelineLock) -> Bool
-Retruns true if `dpl` is in the `filled` state.  Throw a
+Return true if `dpl` is in the `filled` state.  Throw a
 `DataPipelineLockTerminated` exception if the lock has been terminated.
 """
 isfilled(dpl::DataPipelineLock) = isstate(dpl, FILLED)
 
 """
     isdraining(dpl::DataPipelineLock) -> Bool
-Retruns true if `dpl` is in the `DRAINING` state.  Throw a
+Return true if `dpl` is in the `DRAINING` state.  Throw a
 `DataPipelineLockTerminated` exception if the lock has been terminated.
 """
 isdraining(dpl::DataPipelineLock) = isstate(dpl, DRAINING)
