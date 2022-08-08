@@ -132,6 +132,12 @@ function Base.show(io::IO, dpl::DataPipelineLock)
 end
 
 """
+    getstate(dpl::DataPipelineLock) -> DataPipelineLockState
+Return the current state of `dpl`.
+"""
+getstate(dpl::DataPipelineLock) = dpl.state
+
+"""
     isstate(dpl::DataPipelineLock, state::DataPipelineLockState) -> Bool
 Return true if `dpl` is in the `state` state.  Throw a
 `DataPipelineLockTerminated` exception if the lock has been terminated unless

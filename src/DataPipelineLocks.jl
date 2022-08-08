@@ -2,6 +2,7 @@ module DataPipelineLocks
 
 export DataPipelineLock
 export DataPipelineTerminated
+export getstate
 export isfree, isfilled
 export setfree!, setfilled!
 export waitfree, waitfilled
